@@ -199,8 +199,12 @@ code{background:var(--navy-tint); padding:1px 5px; border-radius:3px; font-size:
             <div><label class="tiny" for="d1">수업 요일 ①</label><select id="d1"></select></div>
             <div><label class="tiny" for="d2">수업 요일 ②</label><select id="d2"></select></div>
           </div>
+          <div class="grid2">
+            <div><label class="tiny" for="from">시작일 <span style="opacity:.7">(비우면 1일)</span></label><input id="from" type="date"></div>
+            <div><label class="tiny" for="to">종료일 <span style="opacity:.7">(비우면 말일)</span></label><input id="to" type="date"></div>
+          </div>
           <div><label class="tiny">교재 사진 칸 수</label><div class="segs" id="covcount"></div></div>
-          <div><label class="tiny" for="off">휴강일 <span style="opacity:.8">(일자만, 쉼표로 — 예: 3, 24)</span></label><input id="off" placeholder="예: 3, 24"></div>
+          <div><label class="tiny" for="off">휴강일 <span style="opacity:.8">(일자만, 쉼표로 — 예: 3, 24)</span></label><input id="off" placeholder="예: 3, 24 또는 11/3"></div>
         </div>
       </div>
       <div class="block">
@@ -305,25 +309,44 @@ const cur = () => data.classes[data.active];
 const esc = s => String(s==null?"":s).replace(/[&<>]/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[m]));
 const isVocab = label => /단어/.test(label);
 
-function blocksOf(year, month, d1, d2){
-  const last = new Date(year, month, 0).getDate();
+const parseDate = v => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(v||"").trim());
+  return m ? new Date(+m[1], +m[2]-1, +m[3]) : null;
+};
+function rangeOf(c){                       // 시작일·종료일이 없으면 그 달 전체
+  const from = parseDate(c.from) || new Date(data.year, data.month-1, 1);
+  const to   = parseDate(c.to)   || new Date(data.year, data.month, 0);
+  return {from, to};
+}
+function blocksOf(d1, d2, from, to){
   const out = []; let key = null;
-  for(let d=1; d<=last; d++){
-    const dt = new Date(year, month-1, d), w = dt.getDay();
-    if(w!==d1 && w!==d2) continue;
-    const k = new Date(year, month-1, d-((w+6)%7)).toDateString();
-    if(k !== key){ out.push({slots:[null,null]}); key = k; }
-    const b = out[out.length-1];
-    if(w===d1 && b.slots[0]===null) b.slots[0] = dt; else b.slots[1] = dt;
+  const dt = new Date(from);
+  while(dt <= to){
+    const w = dt.getDay();
+    if(w === d1 || w === d2){
+      const monday = new Date(dt); monday.setDate(dt.getDate() - ((w+6)%7));
+      const k = monday.toDateString();
+      if(k !== key){ out.push({slots:[null,null]}); key = k; }
+      const b = out[out.length-1];
+      if(w===d1 && b.slots[0]===null) b.slots[0] = new Date(dt); else b.slots[1] = new Date(dt);
+    }
+    dt.setDate(dt.getDate() + 1);
   }
   return out;
 }
 const fmt = dt => `${dt.getMonth()+1}월 ${dt.getDate()}일 (${DAYS[dt.getDay()]})`;
-const offDays = s => String(s||"").split(/[,\s]+/).map(x=>parseInt(x.replace(/[^0-9]/g,""),10)).filter(n=>!isNaN(n));
+const offDays = s => String(s||"").split(/[,]+/).map(x => x.trim()).filter(Boolean).map(x => {
+  const mm = /(\d+)\s*[\/월]\s*(\d+)/.exec(x);          // 11/3 또는 11월 3일
+  if(mm) return {m:+mm[1], d:+mm[2]};
+  const n = parseInt(x.replace(/[^0-9]/g,""), 10);
+  return isNaN(n) ? null : {m:null, d:n};
+}).filter(Boolean);
+const isOff = (offs, dt) => offs.some(o => o.d === dt.getDate() && (o.m === null || o.m === dt.getMonth()+1));
 
 function build(){
   const c = cur();
-  const blocks = blocksOf(data.year, data.month, +c.d1, +c.d2);
+  const {from, to} = rangeOf(c);
+  const blocks = blocksOf(+c.d1, +c.d2, from, to);
   const offs = offDays(c.off);
   const state = c.items.map(it => ({cursor:+it.start||1, done:false, doneOn:null}));
   const byLabel = {}; c.items.forEach((it,i)=>byLabel[it.label]=i);
@@ -339,12 +362,12 @@ function build(){
     });
     b.slots.forEach((dt, si) => {
       if(!dt) return;
-      const isOff = offs.includes(dt.getDate());
+      const off = isOff(offs, dt);
       const raw = {};
       c.items.forEach((it, i) => {
         const cell = b.cells[i][si];
         if(it.mode==="none"){ cell.text = "x"; return; }
-        if(isOff){ cell.text = "휴강"; cell.cls = "off"; return; }
+        if(off){ cell.text = "휴강"; cell.cls = "off"; return; }
         if(!it.book) return;
         const srcIdx = it.link && byLabel[it.link]!==undefined ? byLabel[it.link] : i;
         const st = state[srcIdx];
@@ -518,6 +541,7 @@ function renderTabs(){
 function renderForm(){
   const c = cur();
   renderCovCount();
+  $("from").value = c.from || ""; $("to").value = c.to || "";
   $("cname").value = c.name; $("ctitle").value = c.title; $("off").value = c.off; $("cteacher").value = c.teacher || "";
   [["d1",c.d1],["d2",c.d2]].forEach(([id,v]) => {
     $(id).innerHTML = DAYS.map((d,i)=>`<option value="${i}" ${i==v?"selected":""}>${d}요일</option>`).join("");
@@ -638,6 +662,8 @@ $("school").addEventListener("input", e => { data.school = e.target.value; rende
 $("cname").addEventListener("input", e => { cur().name = e.target.value; renderTabs(); render(); });
 $("ctitle").addEventListener("input", e => { cur().title = e.target.value; render(); });
 $("off").addEventListener("input", e => { cur().off = e.target.value; render(); });
+$("from").addEventListener("change", e => { cur().from = e.target.value; render(); });
+$("to").addEventListener("change", e => { cur().to = e.target.value; render(); });
 $("d1").addEventListener("change", e => { cur().d1 = +e.target.value; render(); });
 $("d2").addEventListener("change", e => { cur().d2 = +e.target.value; render(); });
 $("addItem").onclick = () => { cur().items.push(item("새 항목")); renderForm(); render(); };
@@ -706,7 +732,7 @@ $("dl").onclick = async () => {
 
   ws.mergeCells("A3:D3");
   cellStyle(ws.getCell("A3"), {size:10.5, color:GRAYT, align:"center", noBorder:true});
-  ws.getCell("A3").value = `${data.school} · ${data.year}년 ${data.month}월 · 총 ${sessions}회`;
+  ws.getCell("A3").value = `${data.school} · ${period} · 총 ${sessions}회`;
   ws.getRow(3).height = 18;
 
   let r = 5;
