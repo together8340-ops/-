@@ -109,9 +109,11 @@ table.plan{border-collapse:collapse; width:100%; min-width:680px; table-layout:f
 .plan tr.vocab td.item, .plan tr.vocab td.book{background:#f6e7bc}
 .plan td.v{text-align:center}
 .plan td.v.empty{color:#c9c6c0}
-.plan td.v.man{outline:1px dashed #b9b4d8; outline-offset:-3px; cursor:text; min-height:22px}
+.plan td.v.man{outline:1px dashed #b9b4d8; outline-offset:-3px; cursor:text; min-height:22px; position:relative; text-align:center}
 .plan td.v.man:focus{outline:2px solid #56508a; background:#fbfaff}
-.plan td.v.man[data-ph]::before{content:"직접 입력"; color:#c9c6c0}
+.plan td.v.man[data-ph]::before{content:"직접 입력"; color:#c9c6c0; position:absolute; left:0; right:0; top:50%;
+  transform:translateY(-50%); pointer-events:none; font-size:12px}
+.plan td.v.man:focus::before{content:""}
 .paper.printmode .plan td.v.man{outline:none}
 .paper.printmode .plan td.v.man[data-ph]::before{content:""}
 .plan td.v.off .tag{display:inline-block; background:#fbe7e1; color:#b65340; font-weight:700; padding:3px 11px; border-radius:11px; font-size:11.5px}
@@ -556,7 +558,7 @@ function doSave(){
 }
 function autosave(){
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(doSave, 700);
+  saveTimer = setTimeout(doSave, 400);
 }
 
 function renderTabs(){
@@ -657,7 +659,10 @@ $("preview").addEventListener("focusout", ev => {
   const v = td.textContent.trim();
   if(v) it.vals[td.dataset.md] = v; else delete it.vals[td.dataset.md];
   render();
+  clearTimeout(saveTimer); doSave();          // 입력 끝나면 바로 저장
 });
+window.addEventListener("beforeunload", () => { clearTimeout(saveTimer); doSave(); });
+document.addEventListener("visibilitychange", () => { if(document.hidden){ clearTimeout(saveTimer); doSave(); } });
 $("preview").addEventListener("keydown", ev => {
   const td = ev.target.closest && ev.target.closest("td.man");
   if(td && ev.key === "Enter"){ ev.preventDefault(); td.blur(); }
