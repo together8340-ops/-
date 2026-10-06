@@ -78,6 +78,8 @@ h2 .note{font-family:"IBM Plex Sans KR",sans-serif; font-weight:400; color:var(-
 .item .hd input:hover{border-color:var(--field-rule); background:var(--field)}
 .item .hd button{border:none; background:transparent; color:var(--soft); cursor:pointer; font-size:16px; padding:2px 4px}
 .item .hd button:hover{color:var(--alert)}
+.item .manual{display:flex; align-items:center; gap:7px; font-size:12.5px; color:var(--soft); margin:0 0 9px; cursor:pointer}
+.item .manual input{width:auto}
 .row3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px}
 .row2{display:grid; grid-template-columns:1fr 1fr; gap:8px}
 .linked{opacity:.5}
@@ -89,6 +91,8 @@ h2 .note{font-family:"IBM Plex Sans KR",sans-serif; font-weight:400; color:var(-
 .sheethead h3{display:inline-block; vertical-align:middle; margin:0 0 0 12px; font-size:clamp(22px,3.8vw,36px); font-weight:700; letter-spacing:.14em; color:#1a1a1a; font-family:"IBM Plex Sans KR",sans-serif; white-space:nowrap}
 .sheetsub{text-align:left; margin:5px 0 22px 2px}
 .sheetsub .who{display:block; font-size:19px; font-weight:700; color:#1a1a1a; letter-spacing:-.01em}
+.sheetsub.back{margin-bottom:12px}
+.sheetsub.back .who{font-size:14px; color:var(--soft)}
 .sheetsub .meta{display:block; font-size:12px; color:#8d8a83; margin-top:3px}
 table.plan{border-collapse:collapse; width:100%; min-width:680px; table-layout:fixed}
 .plan th, .plan td{border:1.3px solid #bdb9b0; padding:9px 10px; font-size:13px; line-height:1.3; vertical-align:middle; word-break:keep-all; color:#1a1a1a; text-align:center}
@@ -105,8 +109,16 @@ table.plan{border-collapse:collapse; width:100%; min-width:680px; table-layout:f
 .plan tr.vocab td.item, .plan tr.vocab td.book{background:#f6e7bc}
 .plan td.v{text-align:center}
 .plan td.v.empty{color:#c9c6c0}
+.plan td.v.man{outline:1px dashed #b9b4d8; outline-offset:-3px; cursor:text; min-height:22px}
+.plan td.v.man:focus{outline:2px solid #56508a; background:#fbfaff}
+.plan td.v.man[data-ph]::before{content:"직접 입력"; color:#c9c6c0}
+.paper.printmode .plan td.v.man{outline:none}
+.paper.printmode .plan td.v.man[data-ph]::before{content:""}
 .plan td.v.off .tag{display:inline-block; background:#fbe7e1; color:#b65340; font-weight:700; padding:3px 11px; border-radius:11px; font-size:11.5px}
 .plan .tagfin{display:inline-block; background:#e0efe4; color:#3f7b55; font-weight:700; font-size:11px; padding:2px 8px; border-radius:9px; margin-left:5px}
+.pagewrap + .pagewrap{margin-top:30px; padding-top:22px; border-top:2px dashed var(--rule)}
+.pagetag{font-size:11.5px; font-weight:700; color:var(--soft); letter-spacing:.06em; margin-bottom:12px}
+.paper.printmode .pagetag{display:none}
 .covers{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-top:24px}
 .cov{position:relative; height:215px; border:1.3px dashed #bdb9b0; background:#fbfaf8;
   display:flex; align-items:center; justify-content:center; cursor:pointer; overflow:hidden}
@@ -123,7 +135,9 @@ table.plan{border-collapse:collapse; width:100%; min-width:680px; table-layout:f
 .paper.printmode .sheethead h3{font-size:33px}
 .paper.printmode .sheetsub{margin:4px 0 0 2px}
 .paper.printmode .sheetsub .who{font-size:17px}
-.paper.printmode .sheetsub .meta{font-size:11.5px}
+.paper.printmode .sheetsub.back{margin-bottom:12px}
+.sheetsub.back .who{font-size:14px; color:var(--soft)}
+.sheetsub .meta{font-size:11.5px}
 .paper.printmode .plan th, .paper.printmode .plan td{padding:var(--cpad,4px) 7px; border:1px solid #a9a5a0; border-radius:0; font-size:var(--fs,13px)}
 .paper.printmode .plan td.item{font-size:calc(var(--fs,13px) + 0.5px)}
 .paper.printmode .plan td.book{font-size:calc(var(--fs,13px) - 1px)}
@@ -134,6 +148,13 @@ table.plan{border-collapse:collapse; width:100%; min-width:680px; table-layout:f
 .paper.printmode .cov{border-style:solid; height:190px; border-radius:0}
 .paper.printmode .cov.empty{visibility:hidden}
 .paper.printmode .cov .rm{display:none}
+.daypick{position:relative}
+.daypick summary{list-style:none; cursor:pointer; background:var(--field); border:1px solid var(--field-rule); border-radius:5px; padding:7px 9px; font-weight:600}
+.daypick summary::-webkit-details-marker{display:none}
+.daypick summary::after{content:"▾"; float:right; color:var(--soft)}
+.daybox{position:absolute; z-index:5; left:0; right:0; margin-top:4px; background:var(--card); border:1px solid var(--rule); border-radius:6px; padding:8px; box-shadow:0 4px 14px var(--shadow)}
+.daybox label{display:flex; align-items:center; gap:8px; padding:5px 4px; font-size:13.5px; cursor:pointer}
+.daybox input{width:auto}
 .segs{display:flex; gap:6px}
 .segs button{flex:1; padding:7px 0; border:1px solid var(--field-rule); background:var(--field); border-radius:5px; cursor:pointer; font-weight:600}
 .segs button[aria-pressed="true"]{border-color:var(--navy); color:var(--navy); box-shadow:0 0 0 1px var(--navy) inset}
@@ -195,9 +216,10 @@ code{background:var(--navy-tint); padding:1px 5px; border-radius:3px; font-size:
           <div><label class="tiny" for="cteacher">선생님</label><input id="cteacher" placeholder="예: 서윤희 원장T"></div>
           <div><label class="tiny" for="cname">반 이름 (탭 표시)</label><input id="cname"></div>
           <div><label class="tiny" for="ctitle">계획표에 쓸 반 이름</label><input id="ctitle"></div>
-          <div class="grid2">
-            <div><label class="tiny" for="d1">수업 요일 ①</label><select id="d1"></select></div>
-            <div><label class="tiny" for="d2">수업 요일 ②</label><select id="d2"></select></div>
+          <div><label class="tiny">수업 요일</label>
+            <details class="daypick" id="daypick"><summary id="daysum">요일 고르기</summary>
+              <div class="daybox" id="daybox"></div>
+            </details>
           </div>
           <div class="grid2">
             <div><label class="tiny" for="from">시작일 <span style="opacity:.7">(비우면 1일)</span></label><input id="from" type="date"></div>
@@ -235,7 +257,7 @@ code{background:var(--navy-tint); padding:1px 5px; border-radius:3px; font-size:
           <li><b>단일</b> — 3회 처럼 한 번호만 씁니다.</li>
           <li><b>없음</b> — 진도 칸에 x 만 들어갑니다.</li>
           <li>앞말·뒷말은 번호 앞뒤 고정 문구입니다. 예) 앞말 <code>rank </code> · 뒷말 <code>번 풀고 정답문장해석하기</code></li>
-          <li>같은 회차를 쓰는 항목은 <b>진도 연동</b>에서 기준 항목을 고르면 번호가 따라갑니다.</li>
+          <li><b>불규칙 진도</b> — 항목 이름 아래 체크를 켜면 그 항목은 자동 계산을 끄고, 미리보기 칸을 눌러 수업일마다 직접 적습니다. 어느 날은 3회, 어느 날은 5회처럼 들쭉날쭉한 진도에 씁니다.</li>
         <li><b>총 분량 뒤 항목</b> — 1~13회 뒤에 minitest가 붙는 교재처럼, 숫자로 안 끝나는 교재에 씁니다. 총 분량(13)까지 숫자로 나간 뒤 적어 둔 항목이 한 회씩 차례로 들어가고, 마지막에 (끝)이 붙습니다. 앞말·뒷말은 붙지 않으니 "minitest1 풀기"처럼 통째로 적으시면 됩니다.</li>
         </ul>
       </details>
@@ -272,28 +294,28 @@ const theme = () => data.theme === "custom"
   : (THEMES.find(t => t.key === data.theme) || THEMES[0]);
 
 function item(label, o){
-  return Object.assign({label, book:"", mode:"single", start:1, per:1, total:"", pre:"", suf:"", link:"", extra:""}, o||{});
+  return Object.assign({label, book:"", mode:"single", start:1, per:1, total:"", pre:"", suf:"", extra:"", manual:false, vals:{}}, o||{});
 }
 function defaultData(){
   return {
     school:"서윤희입시영어학원", theme:"lavender", year:2026, month:11, active:0,
     classes:[
-      { name:"화목 하이레벨반 중3", title:"화목 하이레벨반 중3", teacher:"서윤희 원장T", d1:2, d2:4, off:"",
+      { name:"화목 하이레벨반 중3", title:"화목 하이레벨반 중3", teacher:"서윤희 원장T", days:[2,4], off:"",
         items:[
           item("수업독해",   {book:"", mode:"single", start:1, per:1, suf:"회 풀기"}),
-          item("과제물 독해",{book:"", mode:"single", suf:"회 해석", link:"수업독해"}),
+          item("과제물 독해",{book:"", mode:"single", suf:"회 해석"}),
           item("어법교재",   {book:"어품구해", mode:"range", start:241, per:10, suf:"번 풀고 정답문장해석하기"}),
           item("서술형 교재",{book:"rank 77 실전문제 700제", mode:"list", start:66, per:2, total:77, pre:"rank "}),
-          item("독해집단어", {book:"", mode:"single", suf:"회 단어", link:"수업독해"}),
+          item("독해집단어", {book:"", mode:"single", suf:"회 단어"}),
           item("어휘집 단어",{book:"워드마스터 수능 2000", mode:"range", start:1, per:3, total:50, suf:" day"})
         ]},
-      { name:"월금 고2", title:"월금 고2반", teacher:"서윤희 원장T", d1:1, d2:5, off:"",
+      { name:"월금 고2", title:"월금 고2반", teacher:"서윤희 원장T", days:[1,5], off:"",
         items:[
           item("수업독해",   {book:"2027 고3 써킷 모의고사 24회", mode:"single", start:23, per:1, total:24, pre:"27년 고3 써킷 풀어오기 ", suf:"회"}),
           item("과제물 독해",{book:"학원배부 독해자료 문장삽입교재", mode:"range", start:261, per:10, pre:"문장삽입 ", suf:"번"}),
           item("어법교재",   {book:"없음", mode:"none"}),
           item("서술형교재", {book:"", mode:"none"}),
-          item("독해집단어", {book:"써킷 단어 (학원배부)", mode:"single", suf:"회 단어(의미만)", link:"수업독해"}),
+          item("독해집단어", {book:"써킷 단어 (학원배부)", mode:"single", suf:"회 단어(의미만)"}),
           item("어휘집 단어",{book:"", mode:"range", start:1, per:15, suf:"번"})
         ]}
     ]};
@@ -318,22 +340,27 @@ function rangeOf(c){                       // 시작일·종료일이 없으면 
   const to   = parseDate(c.to)   || new Date(data.year, data.month, 0);
   return {from, to};
 }
-function blocksOf(d1, d2, from, to){
+const dayList = c => {
+  const ds = (c.days && c.days.length ? c.days : [2,4]).slice();
+  return ds.sort((a,b) => ((a+6)%7) - ((b+6)%7));   // 월요일부터
+};
+function blocksOf(days, from, to){
   const out = []; let key = null;
   const dt = new Date(from);
   while(dt <= to){
-    const w = dt.getDay();
-    if(w === d1 || w === d2){
+    const w = dt.getDay(), idx = days.indexOf(w);
+    if(idx >= 0){
       const monday = new Date(dt); monday.setDate(dt.getDate() - ((w+6)%7));
       const k = monday.toDateString();
-      if(k !== key){ out.push({slots:[null,null]}); key = k; }
+      if(k !== key){ out.push({slots: days.map(() => null)}); key = k; }
       const b = out[out.length-1];
-      if(w===d1 && b.slots[0]===null) b.slots[0] = new Date(dt); else b.slots[1] = new Date(dt);
+      b.slots[idx] = new Date(dt);
     }
     dt.setDate(dt.getDate() + 1);
   }
   return out;
 }
+const dkey = dt => `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}-${String(dt.getDate()).padStart(2,"0")}`;
 const fmt = dt => `${dt.getMonth()+1}월 ${dt.getDate()}일 (${DAYS[dt.getDay()]})`;
 const offDays = s => String(s||"").split(/[,]+/).map(x => x.trim()).filter(Boolean).map(x => {
   const mm = /(\d+)\s*[\/월]\s*(\d+)/.exec(x);          // 11/3 또는 11월 3일
@@ -346,19 +373,19 @@ const isOff = (offs, dt) => offs.some(o => o.d === dt.getDate() && (o.m === null
 function build(){
   const c = cur();
   const {from, to} = rangeOf(c);
-  const blocks = blocksOf(+c.d1, +c.d2, from, to);
+  const days = dayList(c);
+  const blocks = blocksOf(days, from, to);
   const offs = offDays(c.off);
   const state = c.items.map(it => ({cursor:+it.start||1, done:false, doneOn:null}));
-  const byLabel = {}; c.items.forEach((it,i)=>byLabel[it.label]=i);
 
-  blocks.forEach(b => { b.cells = c.items.map(()=>[{text:"",cls:""},{text:"",cls:""}]); });
+  blocks.forEach(b => { b.cells = c.items.map(() => days.map(() => ({text:"", cls:""}))); });
 
   blocks.forEach(b => {
     b.books = c.items.map((it, i) => {
-      const src = it.link && byLabel[it.link]!==undefined ? byLabel[it.link] : i;
+      if(it.manual) return it.book || "";
       if(it.mode==="none") return it.book || "없음";
       if(!it.book) return NEED;
-      return state[src].done ? NEED : it.book;
+      return state[i].done ? NEED : it.book;
     });
     b.slots.forEach((dt, si) => {
       if(!dt) return;
@@ -366,10 +393,16 @@ function build(){
       const raw = {};
       c.items.forEach((it, i) => {
         const cell = b.cells[i][si];
+        if(it.manual){                      // 불규칙 진도: 칸에 직접 쓴 값을 그대로
+          cell.key = dkey(dt);
+          cell.text = off ? "휴강" : ((it.vals || {})[cell.key] || "");
+          cell.cls = off ? "off" : "man";
+          return;
+        }
         if(it.mode==="none"){ cell.text = "x"; return; }
         if(off){ cell.text = "휴강"; cell.cls = "off"; return; }
         if(!it.book) return;
-        const srcIdx = it.link && byLabel[it.link]!==undefined ? byLabel[it.link] : i;
+        const srcIdx = i;
         const st = state[srcIdx];
         if(st.done) return;
         let body, fin = false, literal = false;
@@ -395,9 +428,6 @@ function build(){
             if(hitEnd && extras.length === 0){ fin = true; st.done = true; st.doneOn = dt; }
           }
           raw[i] = {body, fin, literal};
-        }else{
-          const r = raw[srcIdx]; if(!r) return;
-          body = r.body; fin = r.fin; literal = r.literal;
         }
         cell.text = literal ? body + (fin ? " (끝)" : "")
                             : (it.pre||"") + body + (it.suf||"") + (fin ? " (끝)" : "");
@@ -405,7 +435,7 @@ function build(){
       });
     });
   });
-  return {blocks, state, c};
+  return {blocks, state, c, days};
 }
 
 function prepList(c, state){
@@ -419,29 +449,67 @@ function prepList(c, state){
   });
 }
 
-function render(){
-  const {blocks, state, c} = build();
-  const sessions = blocks.reduce((n,b)=>n+b.slots.filter(Boolean).length,0);
+function render(limit){
+  const ctx = build();
+  const nd = ctx.days.length;
+  const pv = $("preview");
+  const t = theme();
+  pv.style.setProperty("--th-badge", t.badge);
+  pv.style.setProperty("--th-pill", t.pill);
+  pv.style.setProperty("--th-ink", t.ink);
+  pv.style.setProperty("--th-day", t.day);
 
-  let h = `<div class="sheethead"><div class="badge">${data.month}</div><h3>MONTHLY PLAN</h3></div>
+  if(limit){                                   // PDF 저장 중 — 한 장만
+    pv.innerHTML = sheet(ctx, limit[0], limit[1], limit[2] || 0);
+    autosave(); return;
+  }
+  if(nd >= 3 && ctx.blocks.length > 2){        // 주 3일 이상 — 두 장으로 나눠 세로로 쌓기
+    const pages = splitPages(ctx.blocks.length);
+    pv.innerHTML = pages.map((pg, k) =>
+      `<div class="pagewrap"><div class="pagetag">${k+1}장 ${k === 0 ? "(앞면)" : "(뒷면)"} · 가로 A4</div>${sheet(ctx, pg[0], pg[1], k)}</div>`
+    ).join("");
+    autosave(); return;
+  }
+  pv.innerHTML = sheet(ctx, 0, ctx.blocks.length, 0);
+  autosave();
+}
+
+const splitPages = n => {
+  if(n <= 2) return [[0, n]];
+  const half = Math.ceil(n / 2);               // 5주차면 3 + 2
+  return [[0, half], [half, n]];
+};
+
+function sheet(ctx, from, to, pageIdx){
+  const {blocks: allBlocks, c, days} = ctx;
+  const sessions = allBlocks.reduce((n,b)=>n+b.slots.filter(Boolean).length,0);
+  const period = `${data.year}년 ${data.month}월`;
+  const blocks = allBlocks.slice(from, to);
+  const nd = days.length, span = nd + 2;
+
+  let h = pageIdx ? `<p class="sheetsub back"><span class="who">${esc([c.teacher, c.title].filter(Boolean).join(" · "))}</span></p>`
+    : `<div class="sheethead"><div class="badge">${data.month}</div><h3>MONTHLY PLAN</h3></div>
     <p class="sheetsub">
       <span class="who">${esc([c.teacher, c.title].filter(Boolean).join(" · "))}</span>
-      <span class="meta">${esc(data.school)} · ${data.year}년 ${data.month}월 · 총 ${sessions}회</span>
-    </p>
-    <table class="plan"><colgroup><col><col><col><col></colgroup><tbody>`;
+      <span class="meta">${esc(data.school)} · ${period} · 총 ${sessions}회</span>
+    </p>`;
+  h += `<table class="plan"><colgroup>${Array.from({length:span},()=>"<col>").join("")}</colgroup><tbody>`;
 
   blocks.forEach((b, bi) => {
     const dh = i => {
       const dt = b.slots[i];
       return dt ? `${dt.getMonth()+1}월 ${dt.getDate()}일 (${DAYS[dt.getDay()]})` : "";
     };
-    h += `<tr class="wk"><td colspan="4"><span class="pill">WEEK ${bi+1}</span></td></tr>
-      <tr><th class="c-item">항목</th><th class="c-book">교재</th>
-          <th class="c-day">${dh(0)}</th><th class="c-day">${dh(1)}</th></tr>`;
+    h += `<tr class="wk"><td colspan="${span}"><span class="pill">WEEK ${from + bi + 1}</span></td></tr>
+      <tr><th class="c-item">항목</th><th class="c-book">교재</th>` +
+      days.map((_, si) => `<th class="c-day">${dh(si)}</th>`).join("") + `</tr>`;
     c.items.forEach((it, i) => {
       const bk = b.books[i];
-      const cells = [0,1].map(si => {
+      const cells = days.map((_, si) => {
         const cell = b.cells[i][si];
+        if(cell.cls === "man"){
+          return `<td class="v man" contenteditable="true" data-mi="${i}" data-md="${cell.key}" ${cell.text ? "" : 'data-ph="1"'}>${esc(cell.text)}</td>`;
+        }
         if(!cell.text) return `<td class="v empty">·</td>`;
         if(cell.cls === "off") return `<td class="v off"><span class="tag">휴강</span></td>`;
         if(cell.cls === "fin") return `<td class="v">${esc(cell.text.replace(/\s\(끝\)$/,""))}<span class="tagfin">교재 끝</span></td>`;
@@ -453,24 +521,18 @@ function render(){
   });
   h += `</tbody></table>`;
 
+  const lastPage = to >= allBlocks.length;
   const n = c.covCount || 4;
   if(!c.covers) c.covers = [null,null,null,null,null];
   while(c.covers.length < 5) c.covers.push(null);
   const covs = Array.from({length:n}, (_, i) => c.covers[i] || null);
   const covH = Math.round(Math.min(330, 215 * 4 / n));
-  h += `<div class="covers" style="grid-template-columns:repeat(${n},1fr)">` + covs.map((cv, i) =>
+  if(lastPage) h += `<div class="covers" style="grid-template-columns:repeat(${n},1fr)">` + covs.map((cv, i) =>
     cv ? `<div class="cov" data-i="${i}" style="height:${covH}px"><img src="${cv.src}" alt=""><button class="rm" data-rm="${i}" title="사진 빼기">×</button></div>`
        : `<div class="cov empty" data-i="${i}" style="height:${covH}px"><span class="ph"><b>＋</b>교재 표지<br>사진 넣기</span></div>`
   ).join("") + `</div>`;
 
-  const t = theme();
-  const pv = $("preview");
-  pv.style.setProperty("--th-badge", t.badge);
-  pv.style.setProperty("--th-pill", t.pill);
-  pv.style.setProperty("--th-ink", t.ink);
-  pv.style.setProperty("--th-day", t.day);
-  pv.innerHTML = h;
-  autosave();
+  return h;
 }
 
 let saveTimer = null, savedCovers = true;
@@ -543,26 +605,23 @@ function renderForm(){
   renderCovCount();
   $("from").value = c.from || ""; $("to").value = c.to || "";
   $("cname").value = c.name; $("ctitle").value = c.title; $("off").value = c.off; $("cteacher").value = c.teacher || "";
-  [["d1",c.d1],["d2",c.d2]].forEach(([id,v]) => {
-    $(id).innerHTML = DAYS.map((d,i)=>`<option value="${i}" ${i==v?"selected":""}>${d}요일</option>`).join("");
-  });
+  renderDays();
   const box = $("items"); box.innerHTML = "";
   c.items.forEach((it, i) => {
     const el = document.createElement("div");
     el.className = "item" + (isVocab(it.label) ? " vocab" : "");
-    const others = c.items.filter((o,j)=>j!==i).map(o=>`<option value="${esc(o.label)}" ${o.label===it.link?"selected":""}>${esc(o.label)} 따라가기</option>`).join("");
     el.innerHTML = `
       <div class="hd"><input data-k="label" value="${esc(it.label)}" aria-label="항목 이름"><button type="button" data-del title="항목 지우기">×</button></div>
+      <label class="manual"><input type="checkbox" data-k="manual" ${it.manual?"checked":""}> 불규칙 진도 — 미리보기 칸에 직접 입력</label>
       <div class="grid1">
         <div><label class="tiny">교재명 <span style="opacity:.7">(비우면 “새 교재 필요”)</span></label><input data-k="book" value="${esc(it.book)}"></div>
-        <div class="row3">
+        <div class="row2">
           <div><label class="tiny">표기</label><select data-k="mode">
             ${[["range","범위 1-10"],["list","나열 1,2"],["single","단일 1"],["none","없음 (x)"]].map(([v,t])=>`<option value="${v}" ${it.mode===v?"selected":""}>${t}</option>`).join("")}
           </select></div>
-          <div><label class="tiny">진도 연동</label><select data-k="link"><option value="">독자 진도</option>${others}</select></div>
           <div><label class="tiny">총 분량</label><input data-k="total" type="number" value="${it.total}" placeholder="끝없음"></div>
         </div>
-        <div class="row2 ${it.link?"linked":""}">
+        <div class="row2 ${it.manual?"linked":""}">
           <div><label class="tiny">시작 번호</label><input data-k="start" type="number" value="${it.start}"></div>
           <div><label class="tiny">1회당 진도</label><input data-k="per" type="number" min="1" value="${it.per}"></div>
         </div>
@@ -576,8 +635,9 @@ function renderForm(){
     el.querySelectorAll("[data-k]").forEach(inp => {
       inp.addEventListener("input", () => {
         const k = inp.dataset.k;
-        it[k] = (k==="start"||k==="per") ? (parseInt(inp.value,10)||0) : inp.value;
-        if(k==="label" || k==="link" || k==="mode"){ renderForm(); }
+        it[k] = (k==="start"||k==="per") ? (parseInt(inp.value,10)||0)
+              : (inp.type === "checkbox" ? inp.checked : inp.value);
+        if(k==="label" || k==="manual" || k==="mode"){ renderForm(); }
         render();
       });
     });
@@ -585,9 +645,23 @@ function renderForm(){
     box.appendChild(el);
   });
 }
-function renderAll(){ renderTabs(); renderForm(); renderThemes(); renderCovCount(); render(); }
+function renderAll(){ renderTabs(); renderForm(); renderThemes(); renderCovCount(); renderDays(); render(); }
 
 let covSlot = 0;
+$("preview").addEventListener("focusout", ev => {
+  const td = ev.target.closest && ev.target.closest("td.man");
+  if(!td) return;
+  const it = cur().items[+td.dataset.mi];
+  if(!it) return;
+  if(!it.vals) it.vals = {};
+  const v = td.textContent.trim();
+  if(v) it.vals[td.dataset.md] = v; else delete it.vals[td.dataset.md];
+  render();
+});
+$("preview").addEventListener("keydown", ev => {
+  const td = ev.target.closest && ev.target.closest("td.man");
+  if(td && ev.key === "Enter"){ ev.preventDefault(); td.blur(); }
+});
 $("preview").addEventListener("click", ev => {
   const rm = ev.target.closest("[data-rm]");
   if(rm){ ev.stopPropagation(); cur().covers[+rm.dataset.rm] = null; render(); return; }
@@ -616,6 +690,28 @@ $("coverFile").addEventListener("change", ev => {
   reader.onerror = () => say("사진을 읽지 못했습니다.", true);
   reader.readAsDataURL(file);
 });
+
+function renderDays(){
+  const c = cur();
+  if(!Array.isArray(c.days) || !c.days.length) c.days = [2,4];
+  const box = $("daybox"); box.innerHTML = "";
+  [1,2,3,4,5,6,0].forEach(w => {                 // 월~일
+    const lab = document.createElement("label");
+    const cb = document.createElement("input");
+    cb.type = "checkbox"; cb.checked = c.days.includes(w);
+    cb.onchange = () => {
+      const set = new Set(cur().days);
+      cb.checked ? set.add(w) : set.delete(w);
+      if(!set.size){ cb.checked = true; return; }   // 최소 한 개
+      cur().days = [...set];
+      renderDays(); render();
+    };
+    lab.appendChild(cb);
+    lab.appendChild(document.createTextNode(`${DAYS[w]}요일`));
+    box.appendChild(lab);
+  });
+  $("daysum").textContent = dayList(c).map(w => DAYS[w]).join(" · ") + `요일 (주 ${c.days.length}일)`;
+}
 
 function renderCovCount(){
   const box = $("covcount"); box.innerHTML = "";
@@ -664,8 +760,6 @@ $("ctitle").addEventListener("input", e => { cur().title = e.target.value; rende
 $("off").addEventListener("input", e => { cur().off = e.target.value; render(); });
 $("from").addEventListener("change", e => { cur().from = e.target.value; render(); });
 $("to").addEventListener("change", e => { cur().to = e.target.value; render(); });
-$("d1").addEventListener("change", e => { cur().d1 = +e.target.value; render(); });
-$("d2").addEventListener("change", e => { cur().d2 = +e.target.value; render(); });
 $("addItem").onclick = () => { cur().items.push(item("새 항목")); renderForm(); render(); };
 $("yy").value = data.year;
 $("mm").innerHTML = Array.from({length:12},(_,i)=>`<option value="${i+1}" ${i+1===data.month?"selected":""}>${i+1}월</option>`).join("");
@@ -678,8 +772,8 @@ $("copy").onclick = async () => {
   const {blocks, c} = build();
   const lines = [`${data.school}  ${c.title}  (${data.year}년 ${data.month}월)`];
   blocks.forEach((b, bi) => {
-    lines.push([`${bi+1}주차`, "", b.slots[0]?fmt(b.slots[0]):"", b.slots[1]?fmt(b.slots[1]):""].join("\t"));
-    c.items.forEach((it,i)=> lines.push([it.label, b.books[i], b.cells[i][0].text, b.cells[i][1].text].join("\t")));
+    lines.push([`${bi+1}주차`, "", ...b.slots.map(d => d ? fmt(d) : "")].join("\t"));
+    c.items.forEach((it,i)=> lines.push([it.label, b.books[i], ...b.cells[i].map(x => x.text)].join("\t")));
     lines.push("");
   });
   try{ await navigator.clipboard.writeText(lines.join("\n")); say("표를 복사했습니다. 엑셀에 붙여넣으면 됩니다."); }
@@ -703,34 +797,35 @@ function cellStyle(cell, o){
 $("dl").onclick = async () => {
   if(typeof ExcelJS === "undefined"){ say("엑셀 모듈을 불러오지 못했습니다. 표 복사를 써 주세요.", true); return; }
   const downloads = await (window.claude && window.claude.use ? window.claude.use("downloads") : null);
-  const {blocks, state, c} = build();
+  const {blocks, state, c, days} = build();
   const sessions = blocks.reduce((n,b)=>n+b.slots.filter(Boolean).length,0);
+  const nd = days.length, L = i => String.fromCharCode(65 + i), LAST = L(nd + 1);
 
   const TH = theme(), PILL = argb(TH.pill), INK = argb(TH.ink), DAYBG = argb(TH.day);
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet(`${data.month}월`, {
-    pageSetup:{paperSize:9, orientation:"portrait", fitToPage:true, fitToWidth:1, fitToHeight:1,
+    pageSetup:{paperSize:9, orientation: nd >= 3 ? "landscape" : "portrait", fitToPage:true, fitToWidth:1, fitToHeight:1,
       horizontalCentered:true, margins:{left:0.2,right:0.2,top:0.3,bottom:0.3,header:0,footer:0}}
   });
-  const COLW = [14, 24, 36, 36];
+  const COLW = [14, 24, ...days.map(() => nd >= 3 ? 30 : 36)];
   ws.columns = COLW.map(w => ({width:w}));
   ws.views = [{showGridLines:false}];
 
-  ws.mergeCells("A1:D1");
+  ws.mergeCells(`A1:${LAST}1`);
   const h1 = ws.getCell("A1");
   h1.value = {richText:[
     {font:{name:"맑은 고딕", size:26, bold:true, color:{argb:INK}}, text:`${data.month}월   `},
     {font:{name:"맑은 고딕", size:26, bold:true, color:{argb:BLACK}}, text:"MONTHLY PLAN"}]};
   h1.alignment = {horizontal:"center", vertical:"middle"};
-  ["A1","B1","C1","D1"].forEach(a => { ws.getCell(a).fill = {type:"pattern", pattern:"solid", fgColor:{argb:PILL}}; });
+  for(let i=0; i<nd+2; i++) ws.getCell(`${L(i)}1`).fill = {type:"pattern", pattern:"solid", fgColor:{argb:PILL}};
   ws.getRow(1).height = 48;
 
-  ws.mergeCells("A2:D2");
+  ws.mergeCells(`A2:${LAST}2`);
   cellStyle(ws.getCell("A2"), {size:15, bold:true, align:"center", noBorder:true});
   ws.getCell("A2").value = [c.teacher, c.title].filter(Boolean).join(" · ");
   ws.getRow(2).height = 24;
 
-  ws.mergeCells("A3:D3");
+  ws.mergeCells(`A3:${LAST}3`);
   cellStyle(ws.getCell("A3"), {size:10.5, color:GRAYT, align:"center", noBorder:true});
   ws.getCell("A3").value = `${data.school} · ${period} · 총 ${sessions}회`;
   ws.getRow(3).height = 18;
@@ -743,12 +838,14 @@ $("dl").onclick = async () => {
 
     ws.getCell(`A${r}`).value = "항목";
     ws.getCell(`B${r}`).value = "교재";
-    ws.getCell(`C${r}`).value = b.slots[0] ? fmt(b.slots[0]) : "";
-    ws.getCell(`D${r}`).value = b.slots[1] ? fmt(b.slots[1]) : "";
     cellStyle(ws.getCell(`A${r}`), {size:11.5, bold:true, color:BLACK, fill:HEADBG, align:"center", wrap:false, bTop:medB, bLeft:medB});
     cellStyle(ws.getCell(`B${r}`), {size:11.5, bold:true, color:BLACK, fill:HEADBG, align:"center", bTop:medB});
-    cellStyle(ws.getCell(`C${r}`), {size:11.5, bold:true, color:BLACK, fill:DAYBG, align:"center", bTop:medB});
-    cellStyle(ws.getCell(`D${r}`), {size:11.5, bold:true, color:BLACK, fill:DAYBG, align:"center", bTop:medB, bRight:medB});
+    days.forEach((_, k) => {
+      const col = L(k + 2);
+      ws.getCell(`${col}${r}`).value = b.slots[k] ? fmt(b.slots[k]) : "";
+      cellStyle(ws.getCell(`${col}${r}`), {size:11.5, bold:true, color:BLACK, fill:DAYBG, align:"center",
+        bTop:medB, bRight:(k === nd-1 ? medB : null)});
+    });
     ws.getRow(r).height = 26; r++;
 
     c.items.forEach((it, i) => {
@@ -758,8 +855,9 @@ $("dl").onclick = async () => {
       cellStyle(ws.getCell(`A${r}`), {size:12, bold:true, align:"center", fill:v?CREAM:ITEMBG, wrap:false, bLeft:medB, bBottom:last});
       ws.getCell(`B${r}`).value = bk;
       cellStyle(ws.getCell(`B${r}`), {size:11.5, bold:bk===NEED, align:"center", color:bk===NEED?CORAL:BLACK, fill:v?CREAM:ITEMBG, bBottom:last});
-      [0,1].forEach((si, k) => {
-        const col = k===0 ? "C" : "D";
+      days.forEach((_, k) => {
+        const col = L(k + 2);
+        const si = k;
         const cell = ws.getCell(`${col}${r}`);
         const cl = b.cells[i][si];
         cell.value = cl.text || "";
@@ -838,7 +936,7 @@ $("dl").onclick = async () => {
     }
   }
 
-  ws.pageSetup.printArea = `A1:D${r}`;
+  ws.pageSetup.printArea = `A1:${LAST}${r}`;
 
   const name = `${data.year}년_${c.name.replace(/\s+/g,"_")}_${data.month}월_계획표.xlsx`;
   let buf;
@@ -882,54 +980,64 @@ $("pdf").onclick = async () => {
   if(typeof html2canvas === "undefined" || !window.jspdf){ say("PDF 모듈을 불러오지 못했습니다. 엑셀 저장을 써 주세요.", true); return; }
   const node = $("preview");
   const prevW = node.style.width;
+  const c = cur();
+  const nd = dayList(c).length;
+  const {blocks} = build();
+
+  // 주 3일 이상이면 가로 A4로, 2주차씩 나눠 두 장(양면)으로
+  const wide = nd >= 3;
+  const pageW = wide ? 1123 : 794;
+  const ratio = wide ? 794 / 1123 : 1123 / 794;
+  const pages = wide ? splitPages(blocks.length).map((pg, k) => [pg[0], pg[1], k]) : [[0, blocks.length, 0]];
+
   node.classList.add("printmode");
-  node.style.width = "794px";
   say("PDF를 만드는 중입니다…");
-
-  // 주차가 늘어나도 가로는 꽉 채우고 세로 여백만 단계적으로 조인다
-  const A4 = 1123 / 794;
-  const covEls = Array.from(node.querySelectorAll(".cov"));
-  const covH0 = covEls.map(el => parseFloat(el.style.height) || el.offsetHeight || 215);
-  const STEPS = [[4,7,1,13], [3,6,.96,13], [2.2,5,.9,12.8], [1.5,4,.84,12.4],
-                 [0.9,3,.76,12], [0.4,2,.66,11.6], [0,1,.56,11.2], [0,1,.46,10.8]];
-  for(const [cp, wp, cf, fs] of STEPS){
-    node.style.setProperty("--cpad", cp + "px");
-    node.style.setProperty("--wkpad", wp + "px");
-    node.style.setProperty("--fs", fs + "px");
-    covEls.forEach((el, i) => { el.style.height = Math.round(covH0[i] * cf) + "px"; });
-    if(node.scrollHeight / 794 <= A4) break;
-  }
-
-  const restore = () => {
-    node.classList.remove("printmode");
-    node.style.width = prevW;
-    node.style.removeProperty("--cpad");
-    node.style.removeProperty("--wkpad");
-    node.style.removeProperty("--fs");
-    render();
-  };
+  const shots = [];
 
   try{
-    const shot = await html2canvas(node, {scale:3, backgroundColor:"#ffffff", useCORS:true, windowWidth:900});
-    restore();
+    for(const pg of pages){
+      render(pg);
+      node.style.width = pageW + "px";
+      const covEls = Array.from(node.querySelectorAll(".cov"));
+      const covH0 = covEls.map(el => parseFloat(el.style.height) || el.offsetHeight || 215);
+      const STEPS = [[4,7,1,13], [3,6,.96,13], [2.2,5,.9,12.8], [1.5,4,.84,12.4],
+                     [0.9,3,.76,12], [0.4,2,.66,11.6], [0,1,.56,11.2], [0,1,.46,10.8]];
+      for(const [cp, wp, cf, fs] of STEPS){
+        node.style.setProperty("--cpad", cp + "px");
+        node.style.setProperty("--wkpad", wp + "px");
+        node.style.setProperty("--fs", fs + "px");
+        covEls.forEach((el, i) => { el.style.height = Math.round(covH0[i] * cf) + "px"; });
+        if(node.scrollHeight / pageW <= ratio) break;
+      }
+      shots.push(await html2canvas(node, {scale:3, backgroundColor:"#ffffff", useCORS:true, windowWidth:pageW + 120}));
+    }
+
+    node.classList.remove("printmode");
+    node.style.width = prevW;
+    ["--cpad","--wkpad","--fs"].forEach(v => node.style.removeProperty(v));
+    render();
 
     const {jsPDF} = window.jspdf;
-    const doc = new jsPDF({unit:"pt", format:"a4", orientation:"portrait"});
+    const doc = new jsPDF({unit:"pt", format:"a4", orientation: wide ? "landscape" : "portrait"});
     const pw = doc.internal.pageSize.getWidth(), ph = doc.internal.pageSize.getHeight(), m = 18;
-    let sc = (pw - 2*m) / shot.width;                              // 가로를 먼저 꽉 채우고
-    if(shot.height * sc > ph - 2*m) sc = (ph - 2*m) / shot.height;  // 그래도 넘치면 세로에 맞춘다
-    const w = shot.width * sc, h = shot.height * sc;
-    doc.addImage(shot.toDataURL("image/png"), "PNG", (pw - w) / 2, m, w, h, undefined, "FAST");
-    await saveFile(`${data.year}년_${cur().name.replace(/\s+/g,"_")}_${data.month}월_계획표.pdf`, doc.output("blob"), "A4 PDF로 저장했습니다.");
+    shots.forEach((shot, i) => {
+      if(i) doc.addPage("a4", wide ? "landscape" : "portrait");
+      let sc = (pw - 2*m) / shot.width;
+      if(shot.height * sc > ph - 2*m) sc = (ph - 2*m) / shot.height;
+      const w = shot.width * sc, h = shot.height * sc;
+      doc.addImage(shot.toDataURL("image/png"), "PNG", (pw - w) / 2, m, w, h, undefined, "FAST");
+    });
+    await saveFile(`${data.year}년_${c.name.replace(/\s+/g,"_")}_${data.month}월_계획표.pdf`, doc.output("blob"),
+      wide ? `가로 A4 ${shots.length}장으로 저장했습니다. 양면 인쇄하세요.` : "A4 PDF로 저장했습니다.");
   }catch(e){
-    restore();
+    node.classList.remove("printmode");
+    node.style.width = prevW;
+    ["--cpad","--wkpad","--fs"].forEach(v => node.style.removeProperty(v));
+    render();
     say("PDF를 만들지 못했습니다. 엑셀 저장을 써 주세요.", true);
   }
 };
 
-
-$("ver").textContent = `마지막 업데이트 ${APP_UPDATED}`;
-$("reload").onclick = () => location.reload();
 
 renderAll();
 </script>
