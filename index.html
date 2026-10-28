@@ -80,6 +80,11 @@ h2 .note{font-family:"IBM Plex Sans KR",sans-serif; font-weight:400; color:var(-
 .item .hd button:hover{color:var(--alert)}
 .item .manual{display:flex; align-items:center; gap:7px; font-size:12.5px; color:var(--soft); margin:0 0 9px; cursor:pointer}
 .item .manual input{width:auto}
+.item details.next{margin-top:10px; border-top:1px dashed var(--rule); padding-top:9px}
+.item details.next summary{cursor:pointer; font-size:12.5px; font-weight:600; color:var(--soft); list-style:none}
+.item details.next summary::-webkit-details-marker{display:none}
+.item details.next summary::before{content:"＋ "; color:var(--navy)}
+.item details.next[open] summary::before{content:"－ "}
 .row3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px}
 .row2{display:grid; grid-template-columns:1fr 1fr; gap:8px}
 .linked{opacity:.5}
@@ -247,6 +252,9 @@ code{background:var(--navy-tint); padding:1px 5px; border-radius:3px; font-size:
         <button class="ghost" id="dl" type="button">엑셀 파일로 저장</button>
         <button class="ghost" id="copy" type="button">표 복사</button>
         <button class="ghost" id="save" type="button">지금 저장</button>
+        <button class="ghost" id="exp" type="button">설정 내보내기</button>
+        <button class="ghost" id="imp" type="button">설정 불러오기</button>
+        <input type="file" id="impFile" accept=".json,.csv,.txt,application/json,text/plain" style="display:none">
         <span class="saved" id="autosave"></span>
       </div>
       <p class="msg" id="msg"></p>
@@ -259,7 +267,8 @@ code{background:var(--navy-tint); padding:1px 5px; border-radius:3px; font-size:
           <li><b>단일</b> — 3회 처럼 한 번호만 씁니다.</li>
           <li><b>없음</b> — 진도 칸에 x 만 들어갑니다.</li>
           <li>앞말·뒷말은 번호 앞뒤 고정 문구입니다. 예) 앞말 <code>rank </code> · 뒷말 <code>번 풀고 정답문장해석하기</code></li>
-          <li><b>불규칙 진도</b> — 항목 이름 아래 체크를 켜면 그 항목은 자동 계산을 끄고, 미리보기 칸을 눌러 수업일마다 직접 적습니다. 어느 날은 3회, 어느 날은 5회처럼 들쭉날쭉한 진도에 씁니다.</li>
+          <li><b>이어갈 교재</b> — 달 중간에 교재가 끝나는 경우에 씁니다. 다음 교재명과 시작 번호를 적어두면, 앞 교재가 (끝)난 바로 다음 수업일부터 새 교재로 넘어갑니다. 교재가 바뀐 주에는 교재 칸에 <b>앞 교재 → 새 교재</b>로 함께 표시됩니다.</li>
+        <li><b>불규칙 진도</b> — 항목 이름 아래 체크를 켜면 그 항목은 자동 계산을 끄고, 미리보기 칸을 눌러 수업일마다 직접 적습니다. 어느 날은 3회, 어느 날은 5회처럼 들쭉날쭉한 진도에 씁니다.</li>
         <li><b>총 분량 뒤 항목</b> — 1~13회 뒤에 minitest가 붙는 교재처럼, 숫자로 안 끝나는 교재에 씁니다. 총 분량(13)까지 숫자로 나간 뒤 적어 둔 항목이 한 회씩 차례로 들어가고, 마지막에 (끝)이 붙습니다. 앞말·뒷말은 붙지 않으니 "minitest1 풀기"처럼 통째로 적으시면 됩니다.</li>
         </ul>
       </details>
@@ -275,7 +284,7 @@ code{background:var(--navy-tint); padding:1px 5px; border-radius:3px; font-size:
 const DAYS = ["일","월","화","수","목","금","토"];
 const NEED = "새 교재 필요";
 const STORE = "plan-builder-v1";
-const APP_UPDATED = "2026-10-06";   // 생성기 수정일 — 내용을 고칠 때마다 함께 갱신
+const APP_UPDATED = "2026-10-29";   // 생성기 수정일 — 내용을 고칠 때마다 함께 갱신
 const THEMES = [
   {key:"lavender", name:"라벤더", badge:"#7e79b5", pill:"#e8e5f5", ink:"#4a4480", day:"#dcd8ef"},
   {key:"sage",     name:"세이지", badge:"#6e9a7b", pill:"#e1ede4", ink:"#34613f", day:"#d6e7da"},
@@ -296,7 +305,7 @@ const theme = () => data.theme === "custom"
   : (THEMES.find(t => t.key === data.theme) || THEMES[0]);
 
 function item(label, o){
-  return Object.assign({label, book:"", mode:"single", start:1, per:1, total:"", pre:"", suf:"", extra:"", manual:false, vals:{}}, o||{});
+  return Object.assign({label, book:"", mode:"single", start:1, per:1, total:"", pre:"", suf:"", extra:"", book2:"", start2:1, per2:"", total2:"", extra2:"", mode2:"", pre2:"", suf2:"", manual:false, vals:{}}, o||{});
 }
 function defaultData(){
   return {
@@ -378,21 +387,22 @@ function build(){
   const days = dayList(c);
   const blocks = blocksOf(days, from, to);
   const offs = offDays(c.off);
-  const state = c.items.map(it => ({cursor:+it.start||1, done:false, doneOn:null}));
+  const state = c.items.map(it => ({cursor:+it.start||1, phase:0, extraIdx:0, done:false, doneOn:null}));
 
   blocks.forEach(b => { b.cells = c.items.map(() => days.map(() => ({text:"", cls:""}))); });
 
+  const pick = (a, b) => (a === "" || a == null) ? b : a;
+  const phaseCfg = (it, ph) => ph === 0
+    ? {book: it.book,  total: it.total,  extras: it.extra,  per: it.per,
+       mode: it.mode,  pre: it.pre,      suf: it.suf}
+    : {book: it.book2, total: it.total2, extras: it.extra2, per: pick(it.per2, it.per),
+       mode: pick(it.mode2, it.mode), pre: pick(it.pre2, it.pre), suf: pick(it.suf2, it.suf)};
+
   blocks.forEach(b => {
-    b.books = c.items.map((it, i) => {
-      if(it.manual) return it.book || "";
-      if(it.mode==="none") return it.book || "없음";
-      if(!it.book) return NEED;
-      return state[i].done ? NEED : it.book;
-    });
+    b.used = c.items.map(() => []);                 // 이 주에 실제로 쓴 교재들
     b.slots.forEach((dt, si) => {
       if(!dt) return;
       const off = isOff(offs, dt);
-      const raw = {};
       c.items.forEach((it, i) => {
         const cell = b.cells[i][si];
         if(it.manual){                      // 불규칙 진도: 칸에 직접 쓴 값을 그대로
@@ -403,38 +413,56 @@ function build(){
         }
         if(it.mode==="none"){ cell.text = "x"; return; }
         if(off){ cell.text = "휴강"; cell.cls = "off"; return; }
-        if(!it.book) return;
-        const srcIdx = i;
-        const st = state[srcIdx];
+        const st = state[i];
         if(st.done) return;
-        let body, fin = false, literal = false;
-        if(srcIdx === i){
-          const per = Math.max(1, +it.per||1);
-          const total = it.total==="" || it.total===null ? null : +it.total;
-          const extras = String(it.extra||"").split(",").map(x => x.trim()).filter(Boolean);
-          const numDone = total !== null && st.cursor > total;
+        let conf = phaseCfg(it, st.phase);
+        if(!conf.book) return;
+        b.used[i].push(conf.book);
 
-          if(numDone){                      // 숫자 구간이 끝나면 추가 항목(minitest 등)으로
-            const k = st.extraIdx || 0;
-            if(k >= extras.length){ st.done = true; return; }
-            body = extras[k]; literal = true;
-            st.extraIdx = k + 1;
-            if(st.extraIdx >= extras.length){ fin = true; st.done = true; st.doneOn = dt; }
+        const per = Math.max(1, +conf.per||1);
+        const total = (conf.total === "" || conf.total == null) ? null : +conf.total;
+        const extras = String(conf.extras||"").split(",").map(x => x.trim()).filter(Boolean);
+        const numDone = total !== null && st.cursor > total;
+        let body, fin = false, literal = false, ended = false;
+
+        if(numDone){                      // 숫자 구간이 끝나면 추가 항목(minitest 등)으로
+          const k = st.extraIdx || 0;
+          if(k >= extras.length){ st.done = true; return; }
+          body = extras[k]; literal = true;
+          st.extraIdx = k + 1;
+          if(st.extraIdx >= extras.length) ended = true;
+        }else{
+          let a = st.cursor, z = a + per - 1;
+          let hitEnd = false;
+          if(total !== null && z >= total){ z = total; hitEnd = true; }
+          if(conf.mode==="list"){ const arr=[]; for(let n=a;n<=z;n++) arr.push(n); body = arr.join(","); }
+          else body = (a===z ? `${a}` : `${a}-${z}`);
+          st.cursor = z + 1;
+          if(hitEnd && extras.length === 0) ended = true;
+        }
+
+        if(ended){                        // 이 교재 끝 — 다음 교재가 있으면 이어서
+          fin = true;
+          if(st.phase === 0 && it.book2){
+            st.phase = 1;
+            st.cursor = +it.start2 || 1;
+            st.extraIdx = 0;
           }else{
-            let a = st.cursor, z = a + per - 1;
-            let hitEnd = false;
-            if(total !== null && z >= total){ z = total; hitEnd = true; }
-            if(it.mode==="list"){ const arr=[]; for(let n=a;n<=z;n++) arr.push(n); body = arr.join(","); }
-            else body = (a===z ? `${a}` : `${a}-${z}`);
-            st.cursor = z + 1;
-            if(hitEnd && extras.length === 0){ fin = true; st.done = true; st.doneOn = dt; }
+            st.done = true; st.doneOn = dt;
           }
-          raw[i] = {body, fin, literal};
         }
         cell.text = literal ? body + (fin ? " (끝)" : "")
-                            : (it.pre||"") + body + (it.suf||"") + (fin ? " (끝)" : "");
+                            : (conf.pre||"") + body + (conf.suf||"") + (fin ? " (끝)" : "");
         if(fin) cell.cls = "fin";
       });
+    });
+
+    b.books = c.items.map((it, i) => {
+      if(it.manual) return it.book || "";
+      if(it.mode === "none") return it.book || "없음";
+      const u = [...new Set(b.used[i])];
+      if(u.length) return u.join("  →  ");
+      return (!it.book && !it.book2) ? NEED : NEED;
     });
   });
   return {blocks, state, c, days};
@@ -633,11 +661,31 @@ function renderForm(){
         </div>
         <div><label class="tiny">총 분량 뒤 항목 <span style="opacity:.7">(쉼표로, 적은 그대로 들어갑니다)</span></label>
           <input data-k="extra" value="${esc(it.extra||"")}" placeholder="예: minitest1, minitest2"></div>
+        <details class="next" ${it.book2 ? "open" : ""}>
+          <summary>이 교재가 끝나면 이어갈 교재 ${it.book2 ? "· " + esc(it.book2) : ""}</summary>
+          <div class="grid1" style="margin-top:9px">
+            <div><label class="tiny">다음 교재명</label><input data-k="book2" value="${esc(it.book2||"")}" placeholder="비우면 끝난 뒤 '새 교재 필요'로 표시"></div>
+            <div class="row3">
+              <div><label class="tiny">시작 번호</label><input data-k="start2" type="number" value="${it.start2 ?? 1}"></div>
+              <div><label class="tiny">1회당 진도</label><input data-k="per2" type="number" min="1" value="${it.per2 ?? ""}" placeholder="같음"></div>
+              <div><label class="tiny">총 분량</label><input data-k="total2" type="number" value="${it.total2 ?? ""}" placeholder="끝없음"></div>
+            </div>
+            <div class="row3">
+              <div><label class="tiny">표기</label><select data-k="mode2">
+                <option value="" ${!it.mode2?"selected":""}>앞 교재와 같음</option>
+                ${[["range","범위 1-10"],["list","나열 1,2"],["single","단일 1"]].map(([v,t])=>`<option value="${v}" ${it.mode2===v?"selected":""}>${t}</option>`).join("")}
+              </select></div>
+              <div><label class="tiny">앞말</label><input data-k="pre2" value="${esc(it.pre2||"")}" placeholder="같음"></div>
+              <div><label class="tiny">뒷말</label><input data-k="suf2" value="${esc(it.suf2||"")}" placeholder="같음"></div>
+            </div>
+            <div><label class="tiny">총 분량 뒤 항목</label><input data-k="extra2" value="${esc(it.extra2||"")}" placeholder="예: minitest1, minitest2"></div>
+          </div>
+        </details>
       </div>`;
     el.querySelectorAll("[data-k]").forEach(inp => {
       inp.addEventListener("input", () => {
         const k = inp.dataset.k;
-        it[k] = (k==="start"||k==="per") ? (parseInt(inp.value,10)||0)
+        it[k] = (k==="start"||k==="per"||k==="start2") ? (parseInt(inp.value,10)||0)
               : (inp.type === "checkbox" ? inp.checked : inp.value);
         if(k==="label" || k==="manual" || k==="mode"){ renderForm(); }
         render();
@@ -773,6 +821,48 @@ $("mm").addEventListener("change", e => { data.month = +e.target.value; render()
 
 function say(t, err){ const m = $("msg"); m.textContent = t; m.className = "msg" + (err?" err":""); }
 $("save").onclick = () => { doSave(); say("저장했습니다."); };
+$("exp").onclick = async () => {
+  const d = new Date();
+  const stamp = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}`;
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:"application/json"});
+  const dl = await (window.claude && window.claude.use ? window.claude.use("downloads") : null);
+  const base = `계획표설정_${stamp}`;
+  if(dl){
+    try{ await dl.save({filename: base + ".json", data: blob}); say("설정을 파일로 내보냈습니다."); return; }
+    catch(err){
+      if(err && err.code === "declined"){ say("저장을 취소했습니다."); return; }
+      try{ await dl.save({filename: base + ".csv", data: blob}); say("설정을 내보냈습니다. (.csv로 저장되지만 불러오기는 그대로 됩니다)"); return; }
+      catch(e2){ say("설정을 내보내지 못했습니다.", true); return; }
+    }
+  }
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = base + ".json"; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  say("설정을 파일로 내보냈습니다.");
+};
+
+$("imp").onclick = () => { $("impFile").value = ""; $("impFile").click(); };
+$("impFile").addEventListener("change", ev => {
+  const f = ev.target.files && ev.target.files[0];
+  if(!f) return;
+  const rd = new FileReader();
+  rd.onload = () => {
+    try{
+      const p = JSON.parse(rd.result);
+      if(!p || !Array.isArray(p.classes) || !p.classes.length) throw new Error("형식이 다릅니다");
+      data = p;
+      if(!data.school) data.school = "서윤희입시영어학원";
+      if(typeof data.theme !== "number" && typeof data.theme !== "string") data.theme = "lavender";
+      data.classes.forEach(cc => { if(!Array.isArray(cc.days)) cc.days = [cc.d1 ?? 2, cc.d2 ?? 4]; });
+      if(data.active >= data.classes.length) data.active = 0;
+      renderAll(); doSave();
+      say(`설정을 불러왔습니다. (반 ${data.classes.length}개)`);
+    }catch(e){ say("설정 파일을 읽지 못했습니다. 내보내기로 만든 파일인지 확인해 주세요.", true); }
+  };
+  rd.onerror = () => say("파일을 읽지 못했습니다.", true);
+  rd.readAsText(f);
+});
+
 $("copy").onclick = async () => {
   const {blocks, c} = build();
   const lines = [`${data.school}  ${c.title}  (${data.year}년 ${data.month}월)`];
