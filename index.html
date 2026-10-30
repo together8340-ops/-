@@ -825,13 +825,16 @@ $("ctitle").addEventListener("input", e => { cur().title = e.target.value; rende
 $("off").addEventListener("input", e => { cur().off = e.target.value; render(); });
 function syncDateLimits(){
   const c = cur();
-  $("to").min = c.from || "";
-  $("from").max = c.to || "";
+  $("to").min = c.from || "";          // 종료일만 시작일 이후로 제한
+  $("from").removeAttribute("max");    // 시작일은 자유롭게
   if(c.from && c.to && c.to < c.from){ c.to = ""; $("to").value = ""; }
 }
 $("from").addEventListener("change", e => {
-  cur().from = e.target.value;
-  syncMonth(); syncDateLimits(); render();
+  const c = cur(), prevTo = c.to;
+  c.from = e.target.value;
+  syncMonth(); syncDateLimits();
+  if(prevTo && !c.to) say("시작일보다 앞서서 종료일을 비웠습니다. 다시 골라 주세요.");
+  render();
 });
 $("to").addEventListener("change", e => {
   const c = cur();
