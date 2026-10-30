@@ -93,6 +93,7 @@ h2 .note{font-family:"IBM Plex Sans KR",sans-serif; font-weight:400; color:var(-
 @media (max-width:640px){ .paper{padding:20px 14px} }
 .sheethead{display:block; margin-bottom:0}
 .sheethead .badge{display:inline-block; width:52px; height:52px; line-height:52px; text-align:center; border-radius:50%; background:var(--th-badge, #8e8abf); color:#fff; font-size:22px; font-weight:700; vertical-align:middle}
+.sheethead .badge.wide{width:auto; min-width:52px; padding:0 18px; border-radius:26px}
 .sheethead h3{display:inline-block; vertical-align:middle; margin:0 0 0 12px; font-size:clamp(22px,3.8vw,36px); font-weight:700; letter-spacing:.14em; color:#1a1a1a; font-family:"IBM Plex Sans KR",sans-serif; white-space:nowrap}
 .sheetsub{text-align:left; margin:5px 0 22px 2px}
 .sheetsub .who{display:block; font-size:19px; font-weight:700; color:#1a1a1a; letter-spacing:-.01em}
@@ -139,6 +140,7 @@ table.plan{border-collapse:collapse; width:100%; min-width:680px; table-layout:f
 /* 인쇄·PDF 전용: 바깥 테두리 없음, 여백만 조여 A4 한 장에 */
 .paper.printmode{padding:18px 18px 12px; border:none; box-shadow:none; background:#fff}
 .paper.printmode .sheethead .badge{width:46px; height:46px; line-height:46px; font-size:20px}
+.paper.printmode .sheethead .badge.wide{width:auto; min-width:46px; padding:0 16px; border-radius:23px}
 .paper.printmode .sheethead h3{font-size:33px}
 .paper.printmode .sheetsub{margin:4px 0 0 2px}
 .paper.printmode .sheetsub .who{font-size:17px}
@@ -362,6 +364,19 @@ function rangeOf(c){                       // 시작일·종료일이 없으면 
   const to   = parseDate(c.to)   || (c.from ? last : new Date(data.year, data.month, 0));
   return {from, to: (to < from ? from : to)};
 }
+function monthLabel(c){                    // 11 또는 11-12
+  const {from, to} = rangeOf(c || cur());
+  const a = from.getMonth()+1, b = to.getMonth()+1;
+  return a === b ? `${a}` : `${a}-${b}`;
+}
+function periodLabel(c){                   // 2026년 11월 / 2026년 11월~12월
+  const {from, to} = rangeOf(c || cur());
+  const y1 = from.getFullYear(), y2 = to.getFullYear();
+  const m1 = from.getMonth()+1, m2 = to.getMonth()+1;
+  if(y1 === y2 && m1 === m2) return `${y1}년 ${m1}월`;
+  if(y1 === y2) return `${y1}년 ${m1}월~${m2}월`;
+  return `${y1}년 ${m1}월~${y2}년 ${m2}월`;
+}
 const dayList = c => {
   const ds = (c.days && c.days.length ? c.days : [2,4]).slice();
   return ds.sort((a,b) => ((a+6)%7) - ((b+6)%7));   // 월요일부터
@@ -524,12 +539,13 @@ const splitPages = n => {
 function sheet(ctx, from, to, pageIdx){
   const {blocks: allBlocks, c, days} = ctx;
   const sessions = allBlocks.reduce((n,b)=>n+b.slots.filter(Boolean).length,0);
-  const period = `${data.year}년 ${data.month}월`;
+  const period = periodLabel(c);
+  const mlab = monthLabel(c);
   const blocks = allBlocks.slice(from, to);
   const nd = days.length, span = nd + 2;
 
   let h = pageIdx ? `<p class="sheetsub back"><span class="who">${esc([c.teacher, c.title].filter(Boolean).join(" · "))}</span></p>`
-    : `<div class="sheethead"><div class="badge">${data.month}</div><h3>MONTHLY PLAN</h3></div>
+    : `<div class="sheethead"><div class="badge${mlab.length > 2 ? " wide" : ""}">${mlab}</div><h3>MONTHLY PLAN</h3></div>
     <p class="sheetsub">
       <span class="who">${esc([c.teacher, c.title].filter(Boolean).join(" · "))}</span>
       <span class="meta">${esc(data.school)} · ${period} · 총 ${sessions}회</span>
@@ -905,7 +921,7 @@ $("impFile").addEventListener("change", ev => {
 
 $("copy").onclick = async () => {
   const {blocks, c} = build();
-  const lines = [`${data.school}  ${c.title}  (${data.year}년 ${data.month}월)`];
+  const lines = [`${data.school}  ${c.title}  (${periodLabel(c)})`];
   blocks.forEach((b, bi) => {
     lines.push([`${bi+1}주차`, "", ...b.slots.map(d => d ? fmt(d) : "")].join("\t"));
     c.items.forEach((it,i)=> lines.push([it.label, b.books[i], ...b.cells[i].map(x => x.text)].join("\t")));
@@ -938,7 +954,8 @@ $("dl").onclick = async () => {
 
   const TH = theme(), PILL = argb(TH.pill), INK = argb(TH.ink), DAYBG = argb(TH.day);
   const wb = new ExcelJS.Workbook();
-  const ws = wb.addWorksheet(`${data.month}월`, {
+  const MLAB = monthLabel(c), PERIOD = periodLabel(c);
+  const ws = wb.addWorksheet(`${MLAB}월`, {
     pageSetup:{paperSize:9, orientation: nd >= 3 ? "landscape" : "portrait", fitToPage:true, fitToWidth:1, fitToHeight:1,
       horizontalCentered:true, margins:{left:0.2,right:0.2,top:0.3,bottom:0.3,header:0,footer:0}}
   });
@@ -949,7 +966,7 @@ $("dl").onclick = async () => {
   ws.mergeCells(`A1:${LAST}1`);
   const h1 = ws.getCell("A1");
   h1.value = {richText:[
-    {font:{name:"맑은 고딕", size:26, bold:true, color:{argb:INK}}, text:`${data.month}월   `},
+    {font:{name:"맑은 고딕", size:26, bold:true, color:{argb:INK}}, text:`${MLAB}월   `},
     {font:{name:"맑은 고딕", size:26, bold:true, color:{argb:BLACK}}, text:"MONTHLY PLAN"}]};
   h1.alignment = {horizontal:"center", vertical:"middle"};
   for(let i=0; i<nd+2; i++) ws.getCell(`${L(i)}1`).fill = {type:"pattern", pattern:"solid", fgColor:{argb:PILL}};
@@ -962,7 +979,7 @@ $("dl").onclick = async () => {
 
   ws.mergeCells(`A3:${LAST}3`);
   cellStyle(ws.getCell("A3"), {size:10.5, color:GRAYT, align:"center", noBorder:true});
-  ws.getCell("A3").value = `${data.school} · ${period} · 총 ${sessions}회`;
+  ws.getCell("A3").value = `${data.school} · ${PERIOD} · 총 ${sessions}회`;
   ws.getRow(3).height = 18;
 
   let r = 5;
@@ -1073,7 +1090,7 @@ $("dl").onclick = async () => {
 
   ws.pageSetup.printArea = `A1:${LAST}${r}`;
 
-  const name = `${data.year}년_${c.name.replace(/\s+/g,"_")}_${data.month}월_계획표.xlsx`;
+  const name = `${data.year}년_${c.name.replace(/\s+/g,"_")}_${MLAB}월_계획표.xlsx`;
   let buf;
   try{ buf = await wb.xlsx.writeBuffer(); }
   catch(e){ say("엑셀 파일을 만들지 못했습니다. 표 복사를 써 주세요.", true); return; }
@@ -1162,7 +1179,7 @@ $("pdf").onclick = async () => {
       const w = shot.width * sc, h = shot.height * sc;
       doc.addImage(shot.toDataURL("image/png"), "PNG", (pw - w) / 2, m, w, h, undefined, "FAST");
     });
-    await saveFile(`${data.year}년_${c.name.replace(/\s+/g,"_")}_${data.month}월_계획표.pdf`, doc.output("blob"),
+    await saveFile(`${data.year}년_${c.name.replace(/\s+/g,"_")}_${monthLabel(c)}월_계획표.pdf`, doc.output("blob"),
       wide ? `가로 A4 ${shots.length}장으로 저장했습니다. 양면 인쇄하세요.` : "A4 PDF로 저장했습니다.");
   }catch(e){
     node.classList.remove("printmode");
