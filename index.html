@@ -284,7 +284,7 @@ code{background:var(--navy-tint); padding:1px 5px; border-radius:3px; font-size:
 const DAYS = ["일","월","화","수","목","금","토"];
 const NEED = "새 교재 필요";
 const STORE = "plan-builder-v1";
-const APP_UPDATED = "2026-10-29";   // 생성기 수정일 — 내용을 고칠 때마다 함께 갱신
+const APP_UPDATED = "2026-10-30";   // 생성기 수정일 — 내용을 고칠 때마다 함께 갱신
 const THEMES = [
   {key:"lavender", name:"라벤더", badge:"#7e79b5", pill:"#e8e5f5", ink:"#4a4480", day:"#dcd8ef"},
   {key:"sage",     name:"세이지", badge:"#6e9a7b", pill:"#e1ede4", ink:"#34613f", day:"#d6e7da"},
@@ -346,10 +346,21 @@ const parseDate = v => {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(v||"").trim());
   return m ? new Date(+m[1], +m[2]-1, +m[3]) : null;
 };
+function syncMonth(){                      // 시작일을 넣으면 연·월을 그 달로 맞춘다
+  const f = parseDate(cur().from);
+  if(!f) return false;
+  const y = f.getFullYear(), m = f.getMonth() + 1;
+  if(data.year === y && data.month === m) return false;
+  data.year = y; data.month = m;
+  $("yy").value = y;
+  $("mm").value = m;
+  return true;
+}
 function rangeOf(c){                       // 시작일·종료일이 없으면 그 달 전체
   const from = parseDate(c.from) || new Date(data.year, data.month-1, 1);
-  const to   = parseDate(c.to)   || new Date(data.year, data.month, 0);
-  return {from, to};
+  const last = new Date(from.getFullYear(), from.getMonth()+1, 0);
+  const to   = parseDate(c.to)   || (c.from ? last : new Date(data.year, data.month, 0));
+  return {from, to: (to < from ? from : to)};
 }
 const dayList = c => {
   const ds = (c.days && c.days.length ? c.days : [2,4]).slice();
@@ -634,6 +645,7 @@ function renderForm(){
   const c = cur();
   renderCovCount();
   $("from").value = c.from || ""; $("to").value = c.to || "";
+  syncDateLimits();
   $("cname").value = c.name; $("ctitle").value = c.title; $("off").value = c.off; $("cteacher").value = c.teacher || "";
   renderDays();
   const box = $("items"); box.innerHTML = "";
@@ -695,7 +707,7 @@ function renderForm(){
     box.appendChild(el);
   });
 }
-function renderAll(){ renderTabs(); renderForm(); renderThemes(); renderCovCount(); renderDays(); render(); }
+function renderAll(){ renderTabs(); renderForm(); renderThemes(); renderCovCount(); renderDays(); syncMonth(); syncDateLimits(); render(); }
 
 let covSlot = 0;
 $("preview").addEventListener("focusout", ev => {
@@ -811,13 +823,38 @@ $("school").addEventListener("input", e => { data.school = e.target.value; rende
 $("cname").addEventListener("input", e => { cur().name = e.target.value; renderTabs(); render(); });
 $("ctitle").addEventListener("input", e => { cur().title = e.target.value; render(); });
 $("off").addEventListener("input", e => { cur().off = e.target.value; render(); });
-$("from").addEventListener("change", e => { cur().from = e.target.value; render(); });
-$("to").addEventListener("change", e => { cur().to = e.target.value; render(); });
+function syncDateLimits(){
+  const c = cur();
+  $("to").min = c.from || "";
+  $("from").max = c.to || "";
+  if(c.from && c.to && c.to < c.from){ c.to = ""; $("to").value = ""; }
+}
+$("from").addEventListener("change", e => {
+  cur().from = e.target.value;
+  syncMonth(); syncDateLimits(); render();
+});
+$("to").addEventListener("change", e => {
+  const c = cur();
+  if(c.from && e.target.value && e.target.value < c.from){
+    say("종료일은 시작일보다 앞설 수 없습니다.", true);
+    e.target.value = c.to || "";
+    return;
+  }
+  c.to = e.target.value; syncDateLimits(); render();
+});
 $("addItem").onclick = () => { cur().items.push(item("새 항목")); renderForm(); render(); };
 $("yy").value = data.year;
 $("mm").innerHTML = Array.from({length:12},(_,i)=>`<option value="${i+1}" ${i+1===data.month?"selected":""}>${i+1}월</option>`).join("");
 $("yy").addEventListener("input", e => { data.year = +e.target.value || data.year; render(); });
-$("mm").addEventListener("change", e => { data.month = +e.target.value; render(); });
+$("mm").addEventListener("change", e => {
+  data.month = +e.target.value;
+  const c = cur(), f = parseDate(c.from);
+  if(f && (f.getFullYear() !== data.year || f.getMonth()+1 !== data.month)){
+    c.from = ""; c.to = ""; $("from").value = ""; $("to").value = "";
+    say("월을 바꿔서 시작일·종료일을 비웠습니다.");
+  }
+  syncDateLimits(); render();
+});
 
 function say(t, err){ const m = $("msg"); m.textContent = t; m.className = "msg" + (err?" err":""); }
 $("save").onclick = () => { doSave(); say("저장했습니다."); };
